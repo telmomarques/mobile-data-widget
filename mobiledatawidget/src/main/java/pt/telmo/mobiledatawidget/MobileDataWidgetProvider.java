@@ -6,6 +6,10 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Bundle;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 public class MobileDataWidgetProvider extends AppWidgetProvider
@@ -15,13 +19,25 @@ public class MobileDataWidgetProvider extends AppWidgetProvider
     {
         super.onReceive(context, intent);
 
+        RemoteViews remoteViews = this.getRemoteViews(context);
+        MobileData mobileData = MobileData.getInstance(context);
+        MobileDataChangeButton mobileDataChangeButton = new MobileDataChangeButton(remoteViews, R.layout.mobiledatawidgetlayout, R.id.mobileDataButton);
+
         if(intent.getAction().equals("ACTION_MOBILE_DATA_CHANGE"))
         {
-            RemoteViews remoteViews = this.getRemoteViews(context);
-
-            boolean mobileDataState = MobileData.getInstance(context).toggle();
-            new MobileDataChangeButton(remoteViews, R.layout.mobiledatawidgetlayout, R.id.mobileDataButton).changeState(mobileDataState);
+            boolean mobileDataState = mobileData.toggle();
+            mobileDataChangeButton.changeState(mobileDataState);
             this.updateWidget(context, remoteViews);
+        }
+        else if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE"))
+        {
+            NetworkInfo networkInfo = intent.getExtras().getParcelable("networkInfo");
+            if(networkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+            {
+                boolean mobileDataState = mobileData.getCurrentState();
+                mobileDataChangeButton.changeState(mobileDataState);
+                this.updateWidget(context, remoteViews);
+            }
         }
     }
 
